@@ -85,6 +85,30 @@ int dropPacket(struct nfq_q_handle *qh, const uint32_t id) {
 	return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
 }
 
+bool parseHTTP(std::string payload) {
+	const std::string delimiter = "\r\n", fieldName = "Host: ";
+	std::istringstream iss(payload);
+	std::string field;
+	std::size_t idx;
+
+	idx = payload.find(delimiter);
+	while(idx != std::string::npos) {
+		// Check each field
+		field = payload.substr(0, idx);
+
+		// Check Host Field
+		if(field.find(fieldName) == std::string::npos) {
+			if(field.find(filterKeyword) != std::string::npos) return true;
+			else return false;
+		} 
+
+		payload.erase(0, idx + delimiter.size());
+		idx = payload.find(delimiter);
+	}
+
+	return false;
+}
+
 static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {
 	struct nfqnl_msg_packet_hdr *ph;
 	int totalHeaderLength, packetLength, IPHeaderLength;
@@ -125,7 +149,7 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
 		payload = (char*)(packet + totalHeaderLength);
 
 		// Check if payload include filter keyword
-		if(payload.find(filterKeyword) == string::npos) return acceptPacket(qh, id);
+		if(not parseHTTP(payload)) return acceptPacket(qh, id);
 		else {
 			std::cout << "Alert: This packet is filtered! :)\n";
 			return dropPacket(qh, id);
