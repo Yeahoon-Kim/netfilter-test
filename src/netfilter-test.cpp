@@ -33,6 +33,10 @@ static uint32_t print_pkt(struct nfq_data *tb) {
 		cout << " hook: " << (unsigned int)ph->hook;
 		cout << " id: " << (unsigned int)id << '\n';
 	}
+	else {
+		std::cerr << "Error: Error while getting message packet header" << std::endl;
+		return -1;
+	}
 
 	hwph = nfq_get_packet_hw(tb);
 	if (hwph) {
@@ -74,21 +78,25 @@ static uint32_t print_pkt(struct nfq_data *tb) {
 }
 
 int acceptPacket(struct nfq_q_handle *qh, const uint32_t id) {
-	nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+	return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
 }
 
 int dropPacket(struct nfq_q_handle *qh, const uint32_t id) {
-	nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
+	return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
 }
 
 static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {
 	int totalHeaderLength, packetLength, IPHeaderLength;
 	uint8_t* packet;
-	uint32_t id = print_pkt(nfa);
+	uint32_t id;
+
 	std::string payload;
 
 	TcpHdr* TCPHeader;
 	IPv4Hdr* IPv4Header;
+
+	id = print_pkt(nfa);
+	if(not id) return -1;
 
 	if(nfq_get_payload(nfa, &packet) >= 0) {
 		IPv4Header = (IPv4Hdr*)packet;
@@ -113,6 +121,8 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
 		if(payload.find(filterKeyword) == string::npos) return acceptPacket(qh, id);
 		else return dropPacket(qh, id);
 	}
+
+	return -1;
 }
 
 int main(int argc, char* argv[]) {
