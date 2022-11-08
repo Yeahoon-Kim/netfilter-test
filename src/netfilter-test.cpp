@@ -86,6 +86,7 @@ int dropPacket(struct nfq_q_handle *qh, const uint32_t id) {
 }
 
 static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {
+	struct nfqnl_msg_packet_hdr *ph;
 	int totalHeaderLength, packetLength, IPHeaderLength;
 	uint8_t* packet;
 	uint32_t id;
@@ -95,8 +96,14 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
 	TcpHdr* TCPHeader;
 	IPv4Hdr* IPv4Header;
 
+#ifdef DEBUG
 	id = print_pkt(nfa);
 	if(not id) return -1;
+#else
+	ph = nfq_get_msg_packet_hdr(nfa);
+	id = ntohl(ph->packet_id);
+	if(not id) return -1;
+#endif
 
 	if(nfq_get_payload(nfa, &packet) >= 0) {
 		IPv4Header = (IPv4Hdr*)packet;
@@ -119,7 +126,10 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
 
 		// Check if payload include filter keyword
 		if(payload.find(filterKeyword) == string::npos) return acceptPacket(qh, id);
-		else return dropPacket(qh, id);
+		else {
+			std::cout << "Alert: This packet is filtered! :)\n";
+			return dropPacket(qh, id);
+		}
 	}
 
 	return -1;
@@ -178,7 +188,9 @@ int main(int argc, char* argv[]) {
 
 	while( true ) {
 		if ((rv = recv(fd, buf, sizeof(buf), 0)) >= 0) {
-			cout << "pkt received\n";
+#ifdef DEBUG
+			cout << "[DEBUG] pkt received\n";
+#endif
 			nfq_handle_packet(handle, buf, rv);
 
 			continue;
