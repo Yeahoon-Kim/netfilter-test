@@ -87,7 +87,6 @@ int dropPacket(struct nfq_q_handle *qh, const uint32_t id) {
 
 bool parseHTTP(std::string payload) {
 	const std::string delimiter = "\r\n", fieldName = "Host: ";
-	std::istringstream iss(payload);
 	std::string field;
 	std::size_t idx;
 
@@ -97,10 +96,10 @@ bool parseHTTP(std::string payload) {
 		field = payload.substr(0, idx);
 
 		// Check Host Field
-		if(field.find(fieldName) == std::string::npos) {
+		if(field.find(fieldName) != std::string::npos) {
 			if(field.find(filterKeyword) != std::string::npos) return true;
 			else return false;
-		} 
+		}
 
 		payload.erase(0, idx + delimiter.size());
 		idx = payload.find(delimiter);
