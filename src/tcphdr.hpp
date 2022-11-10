@@ -19,16 +19,16 @@ struct TcpHdr final {
            th_off: 4;           /* data offset */
 
     /* control flags */
-    enum th_flags: uint8_t {
-        TH_FIN = 0x01,  /* finished send data */
-        TH_SYN = 0x02,  /* synchronize sequence numbers */
-        TH_RST = 0x04,  /* reset the connection */
-        TH_PUSH = 0x08, /* push data to the app layer */
-        TH_ACK = 0x10,  /* acknowledge */
-        TH_URG = 0x20,  /* urgent! */
-        TH_ECE = 0x40,  
-        TH_CWR = 0x80   
-    };
+    enum: uint8_t {
+        FIN = 0x01,  /* finished send data */
+        SYN = 0x02,  /* synchronize sequence numbers */
+        RST = 0x04,  /* reset the connection */
+        PUSH = 0x08, /* push data to the app layer */
+        ACK = 0x10,  /* acknowledge */
+        URG = 0x20,  /* urgent! */
+        ECE = 0x40,  
+        CWR = 0x80   
+    } th_flags;
 
     uint16_t th_win;    /* window */
     uint16_t th_sum;    /* checksum */

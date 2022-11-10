@@ -97,7 +97,7 @@ bool parseHTTP(std::string payload) {
 
 		// Check Host Field
 		if(field.find(fieldName) != std::string::npos) {
-			if(field.find(filterKeyword) != std::string::npos) return true;
+			if(field.substr(fieldName.size(), field.size() - delimiter.size()) == filterKeyword) return true;
 			else return false;
 		}
 
